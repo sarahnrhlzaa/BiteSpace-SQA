@@ -1,0 +1,10 @@
+{
+    "name": "bitespace/automation-php",
+    "description": "PHPUnit automation test untuk BiteSpace CodeIgniter 4",
+    "require-dev": {
+        "phpunit/phpunit": "^9.0"
+    },
+    "scripts": {
+        "test": "phpunit"
+    }
+}
