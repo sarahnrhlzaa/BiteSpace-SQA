@@ -28,7 +28,11 @@ class OrderDetailModel extends Model
     protected $deletedField  = 'deleted_at';
 
     // Validation
-    protected $validationRules      = [];
+    protected $validationRules      = [
+        'id_order' => 'required|integer',
+        'id_menu'  => 'required|integer',
+        'qty'      => 'required|integer|greater_than[0]'
+    ];
     protected $validationMessages   = [];
     protected $skipValidation       = false;
     protected $cleanValidationRules = true;
