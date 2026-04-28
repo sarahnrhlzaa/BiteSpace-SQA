@@ -1,83 +1,99 @@
 import org.junit.jupiter.api.*;
 import org.openqa.selenium.*;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
+import org.openqa.selenium.chrome.*;
+import org.openqa.selenium.support.ui.*;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import java.time.Duration;
 
 /**
- * TestPromo.java
- * Selenium UI Test – Fitur Promo BiteSpace CI4
+ * TestPromo.java — UI Test Promo BiteSpace CI4
+ * Field : name="kode_promo", name="nama_promo", name="nilai_diskon", dll
+ * Submit: button.btn-submit-bs
  */
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class TestPromo {
 
     static WebDriver driver;
     static WebDriverWait wait;
-    static final String BASE_URL = "http://localhost:8081";
+    // FIX: tambah index.php sesuai $indexPage CI4
+    static final String BASE = "http://localhost:8081/index.php";
 
     @BeforeAll
     static void setup() {
         WebDriverManager.chromedriver().setup();
-        ChromeOptions opt = new ChromeOptions();
-        opt.addArguments("--no-sandbox", "--disable-dev-shm-usage");
-        driver = new ChromeDriver(opt);
+        ChromeOptions o = new ChromeOptions();
+        o.addArguments("--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu");
+        driver = new ChromeDriver(o);
         driver.manage().window().maximize();
-        wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
+        wait = new WebDriverWait(driver, Duration.ofSeconds(20));
     }
 
     @AfterAll
     static void teardown() { if (driver != null) driver.quit(); }
 
     void loginAsAdmin() {
-        driver.get(BASE_URL + "/login");
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.name("username"))).sendKeys("sarah");
-        driver.findElement(By.name("password")).sendKeys("sarah123");
-        driver.findElement(By.cssSelector("button.btn-submit")).click();
+        driver.get(BASE + "/logout");
+        driver.get(BASE + "/login");
+        WebElement usernameField = wait.until(
+            ExpectedConditions.visibilityOfElementLocated(By.name("username")));
+        usernameField.clear();
+        usernameField.sendKeys("sarah");
+        WebElement passwordField = wait.until(
+            ExpectedConditions.visibilityOfElementLocated(By.name("password")));
+        passwordField.clear();
+        passwordField.sendKeys("sarah123");
+        wait.until(ExpectedConditions.elementToBeClickable(
+            By.cssSelector("button.btn-submit"))).click();
         wait.until(ExpectedConditions.urlContains("dashboard"));
     }
 
-    // TC-18: Halaman promo tampil
-    @Test @DisplayName("TC-18: Halaman daftar promo berhasil dimuat")
-    void tc18_halamanPromoTampil() {
+    // TC-13: Halaman promo tampil
+    @Test @Order(1) @DisplayName("TC-13: Halaman promo tampil")
+    void tc13() {
         loginAsAdmin();
-        driver.get(BASE_URL + "/promo");
+        driver.get(BASE + "/promo");
         wait.until(ExpectedConditions.urlContains("promo"));
-        Assertions.assertTrue(driver.getPageSource().contains("Promo") || driver.getPageSource().contains("promo"));
-        System.out.println("[TC-18] PASS: Halaman promo tampil.");
+        Assertions.assertTrue(
+            driver.getPageSource().contains("Promo") || driver.getPageSource().contains("promo")
+        );
+        System.out.println("[TC-13] PASS");
     }
 
-    // TC-19: Halaman tambah promo bisa diakses admin
-    @Test @DisplayName("TC-19: Admin bisa akses halaman tambah promo")
-    void tc19_halamanTambahPromo() {
+    // TC-14: Halaman tambah promo bisa diakses admin
+    @Test @Order(2) @DisplayName("TC-14: Halaman /promo/create bisa diakses admin")
+    void tc14() {
         loginAsAdmin();
-        driver.get(BASE_URL + "/promo/create");
+        driver.get(BASE + "/promo/create");
         wait.until(ExpectedConditions.urlContains("promo"));
         Assertions.assertFalse(driver.getPageSource().contains("Akses ditolak"));
-        System.out.println("[TC-19] PASS: Halaman tambah promo bisa diakses.");
+        System.out.println("[TC-14] PASS");
     }
 
-    // TC-20: Form tambah promo punya field yang diperlukan
-    @Test @DisplayName("TC-20: Form tambah promo punya field kode & nama promo")
-    void tc20_formTambahPromoAdaField() {
+    // TC-15: Form promo ada field kode_promo, nama_promo, nilai_diskon
+    @Test @Order(3) @DisplayName("TC-15: Form promo ada field kode_promo & nama_promo")
+    void tc15() {
         loginAsAdmin();
-        driver.get(BASE_URL + "/promo/create");
+        driver.get(BASE + "/promo/create");
         wait.until(ExpectedConditions.visibilityOfElementLocated(By.name("kode_promo")));
         Assertions.assertNotNull(driver.findElement(By.name("kode_promo")));
         Assertions.assertNotNull(driver.findElement(By.name("nama_promo")));
         Assertions.assertNotNull(driver.findElement(By.name("nilai_diskon")));
-        System.out.println("[TC-20] PASS: Field form promo ada.");
+        System.out.println("[TC-15] PASS");
     }
 
-    // TC-21: Submit promo kosong → validasi menolak
-    @Test @DisplayName("TC-21: Tambah promo gagal jika field kosong")
-    void tc21_tambahPromoKosong() {
+    // TC-16: Submit promo kosong → validasi menolak
+    @Test @Order(4) @DisplayName("TC-16: Tambah promo field kosong → ditolak")
+    void tc16() {
         loginAsAdmin();
-        driver.get(BASE_URL + "/promo/create");
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("button[type='submit']")));
-        driver.findElement(By.cssSelector("button[type='submit']")).click();
+        driver.get(BASE + "/promo/create");
+        wait.until(ExpectedConditions.elementToBeClickable(
+            By.cssSelector("button.btn-submit-bs")));
+        driver.findElement(By.cssSelector("button.btn-submit-bs")).click();
+        // FIX: tunggu halaman stabil setelah submit
+        wait.until(ExpectedConditions.urlContains("promo"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("promo"));
         Assertions.assertFalse(driver.getPageSource().contains("berhasil ditambahkan"));
-        System.out.println("[TC-21] PASS: Validasi field kosong promo berhasil.");
+        System.out.println("[TC-16] PASS");
     }
 }

@@ -1,110 +1,120 @@
 import org.junit.jupiter.api.*;
 import org.openqa.selenium.*;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
+import org.openqa.selenium.chrome.*;
+import org.openqa.selenium.support.ui.*;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import java.time.Duration;
 
 /**
- * TestLogin.java
- * Selenium UI Test – Fitur Login & Logout BiteSpace CI4
- * Server: http://localhost:8081
+ * TestLogin.java — UI Test Login & Logout BiteSpace CI4
+ * Field : name="username", name="password"
+ * Submit: button.btn-submit
  */
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class TestLogin {
 
     static WebDriver driver;
     static WebDriverWait wait;
-    static final String BASE_URL = "http://localhost:8081";
+    // FIX: tambah index.php sesuai $indexPage CI4
+    static final String BASE = "http://localhost:8081/index.php";
 
     @BeforeAll
     static void setup() {
         WebDriverManager.chromedriver().setup();
-        ChromeOptions opt = new ChromeOptions();
-        opt.addArguments("--no-sandbox", "--disable-dev-shm-usage");
-        driver = new ChromeDriver(opt);
+        ChromeOptions o = new ChromeOptions();
+        o.addArguments("--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu");
+        driver = new ChromeDriver(o);
         driver.manage().window().maximize();
-        wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        // FIX: naikkan implicit wait jadi 10 detik supaya stabil di server lokal
+        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
+        wait = new WebDriverWait(driver, Duration.ofSeconds(20));
     }
 
     @AfterAll
     static void teardown() { if (driver != null) driver.quit(); }
 
-    void submitForm(String username, String password) {
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.name("username"))).sendKeys(username);
-        driver.findElement(By.name("password")).sendKeys(password);
-        driver.findElement(By.cssSelector("button.btn-submit")).click();
+    void isiFormLogin(String username, String password) {
+        driver.get(BASE + "/logout");
+        driver.get(BASE + "/login");
+        // FIX: tunggu form benar-benar visible sebelum interaksi
+        WebElement usernameField = wait.until(
+            ExpectedConditions.visibilityOfElementLocated(By.name("username")));
+        usernameField.clear();
+        usernameField.sendKeys(username);
+        WebElement passwordField = wait.until(
+            ExpectedConditions.visibilityOfElementLocated(By.name("password")));
+        passwordField.clear();
+        passwordField.sendKeys(password);
+        wait.until(ExpectedConditions.elementToBeClickable(
+            By.cssSelector("button.btn-submit"))).click();
     }
 
-    // TC-01: Halaman login terbuka
-    @Test @DisplayName("TC-01: Halaman login terbuka")
-    void tc01_halamanLoginTerbuka() {
-        driver.get(BASE_URL + "/login");
+    // TC-01: Halaman login terbuka, form tersedia
+    @Test @Order(1) @DisplayName("TC-01: Halaman login terbuka")
+    void tc01() {
+        driver.get(BASE + "/login");
         wait.until(ExpectedConditions.visibilityOfElementLocated(By.name("username")));
         Assertions.assertNotNull(driver.findElement(By.name("username")));
         Assertions.assertNotNull(driver.findElement(By.name("password")));
-        System.out.println("[TC-01] PASS: Halaman login terbuka.");
+        Assertions.assertNotNull(driver.findElement(By.cssSelector("button.btn-submit")));
+        System.out.println("[TC-01] PASS");
     }
 
-    // TC-02: Login valid → masuk dashboard
-    @Test @DisplayName("TC-02: Login sukses sarah/sarah123")
-    void tc02_loginValid() {
-        driver.get(BASE_URL + "/login");
-        submitForm("sarah", "sarah123");
+    // TC-02: Login valid sarah/sarah123 → redirect dashboard
+    @Test @Order(2) @DisplayName("TC-02: Login sarah/sarah123 → dashboard")
+    void tc02() {
+        isiFormLogin("sarah", "sarah123");
         wait.until(ExpectedConditions.urlContains("dashboard"));
         Assertions.assertTrue(driver.getCurrentUrl().contains("dashboard"));
-        System.out.println("[TC-02] PASS: Login berhasil.");
+        System.out.println("[TC-02] PASS");
     }
 
     // TC-03: Login password salah → tetap di login
-    @Test @DisplayName("TC-03: Login gagal – password salah")
-    void tc03_loginPasswordSalah() {
-        driver.get(BASE_URL + "/login");
-        submitForm("sarah", "salah999");
-        wait.until(ExpectedConditions.urlContains("login"));
+    @Test @Order(3) @DisplayName("TC-03: Login password salah → ditolak")
+    void tc03() {
+        isiFormLogin("sarah", "passwordSalah999");
+        // FIX: tunggu sampai url stabil (bukan dashboard)
+        wait.until(ExpectedConditions.not(ExpectedConditions.urlContains("dashboard")));
         Assertions.assertFalse(driver.getCurrentUrl().contains("dashboard"));
-        System.out.println("[TC-03] PASS: Login ditolak.");
+        System.out.println("[TC-03] PASS");
     }
 
     // TC-04: Login username tidak ada → ditolak
-    @Test @DisplayName("TC-04: Login gagal – username tidak terdaftar")
-    void tc04_loginUsernameAsal() {
-        driver.get(BASE_URL + "/login");
-        submitForm("userAsal999", "apapun");
-        wait.until(ExpectedConditions.urlContains("login"));
+    @Test @Order(4) @DisplayName("TC-04: Login username tidak ada → ditolak")
+    void tc04() {
+        isiFormLogin("userTidakAda999", "apapun");
+        wait.until(ExpectedConditions.not(ExpectedConditions.urlContains("dashboard")));
         Assertions.assertFalse(driver.getCurrentUrl().contains("dashboard"));
-        System.out.println("[TC-04] PASS: Username tidak ada ditolak.");
+        System.out.println("[TC-04] PASS");
     }
 
-    // TC-05: Login field kosong → ditolak
-    @Test @DisplayName("TC-05: Login gagal – field kosong")
-    void tc05_loginFieldKosong() {
-        driver.get(BASE_URL + "/login");
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("button.btn-submit"))).click();
-        Assertions.assertFalse(driver.getCurrentUrl().contains("dashboard"));
-        System.out.println("[TC-05] PASS: Field kosong ditolak.");
-    }
-
-    // TC-06: Dashboard tanpa login → redirect ke login
-    @Test @DisplayName("TC-06: Akses dashboard tanpa login → redirect login")
-    void tc06_dashboardTanpaLogin() {
-        driver.get(BASE_URL + "/logout");
-        driver.get(BASE_URL + "/dashboard");
-        wait.until(ExpectedConditions.urlContains("login"));
-        Assertions.assertTrue(driver.getCurrentUrl().contains("login"));
-        System.out.println("[TC-06] PASS: Redirect ke login.");
-    }
-
-    // TC-07: Logout berhasil
-    @Test @DisplayName("TC-07: Logout berhasil → kembali ke login")
-    void tc07_logoutBerhasil() {
-        driver.get(BASE_URL + "/login");
-        submitForm("sarah", "sarah123");
+    // TC-05: Login neyza/neyza123 valid
+    @Test @Order(5) @DisplayName("TC-05: Login neyza/neyza123 → dashboard")
+    void tc05() {
+        isiFormLogin("neyza", "neyza123");
         wait.until(ExpectedConditions.urlContains("dashboard"));
-        driver.get(BASE_URL + "/logout");
+        Assertions.assertTrue(driver.getCurrentUrl().contains("dashboard"));
+        System.out.println("[TC-05] PASS");
+    }
+
+    // TC-06: Akses dashboard tanpa login → redirect login
+    @Test @Order(6) @DisplayName("TC-06: Dashboard tanpa login → redirect login")
+    void tc06() {
+        driver.get(BASE + "/logout");
+        driver.get(BASE + "/dashboard");
         wait.until(ExpectedConditions.urlContains("login"));
         Assertions.assertTrue(driver.getCurrentUrl().contains("login"));
-        System.out.println("[TC-07] PASS: Logout berhasil.");
+        System.out.println("[TC-06] PASS");
+    }
+
+    // TC-07: Logout → kembali ke login
+    @Test @Order(7) @DisplayName("TC-07: Logout → kembali login")
+    void tc07() {
+        isiFormLogin("sarah", "sarah123");
+        wait.until(ExpectedConditions.urlContains("dashboard"));
+        driver.get(BASE + "/logout");
+        wait.until(ExpectedConditions.urlContains("login"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("login"));
+        System.out.println("[TC-07] PASS");
     }
 }

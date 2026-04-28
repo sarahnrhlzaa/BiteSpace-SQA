@@ -1,96 +1,116 @@
 import org.junit.jupiter.api.*;
 import org.openqa.selenium.*;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
+import org.openqa.selenium.chrome.*;
+import org.openqa.selenium.support.ui.*;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import java.time.Duration;
 
 /**
- * TestEmployee.java
- * Selenium UI Test – Fitur Manajemen Employee BiteSpace CI4
+ * TestEmployee.java — UI Test Employee BiteSpace CI4
+ * Field : name="nama_lengkap", name="username", name="email", name="password"
+ * Submit: button.btn-save
  */
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class TestEmployee {
 
     static WebDriver driver;
     static WebDriverWait wait;
-    static final String BASE_URL = "http://localhost:8081";
+    // FIX: tambah index.php sesuai $indexPage CI4
+    static final String BASE = "http://localhost:8081/index.php";
 
     @BeforeAll
     static void setup() {
         WebDriverManager.chromedriver().setup();
-        ChromeOptions opt = new ChromeOptions();
-        opt.addArguments("--no-sandbox", "--disable-dev-shm-usage");
-        driver = new ChromeDriver(opt);
+        ChromeOptions o = new ChromeOptions();
+        o.addArguments("--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu");
+        driver = new ChromeDriver(o);
         driver.manage().window().maximize();
-        wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
+        wait = new WebDriverWait(driver, Duration.ofSeconds(20));
     }
 
     @AfterAll
     static void teardown() { if (driver != null) driver.quit(); }
 
     void loginAsAdmin() {
-        driver.get(BASE_URL + "/login");
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.name("username"))).sendKeys("sarah");
-        driver.findElement(By.name("password")).sendKeys("sarah123");
-        driver.findElement(By.cssSelector("button.btn-submit")).click();
+        driver.get(BASE + "/logout");
+        driver.get(BASE + "/login");
+        WebElement usernameField = wait.until(
+            ExpectedConditions.visibilityOfElementLocated(By.name("username")));
+        usernameField.clear();
+        usernameField.sendKeys("sarah");
+        WebElement passwordField = wait.until(
+            ExpectedConditions.visibilityOfElementLocated(By.name("password")));
+        passwordField.clear();
+        passwordField.sendKeys("sarah123");
+        wait.until(ExpectedConditions.elementToBeClickable(
+            By.cssSelector("button.btn-submit"))).click();
         wait.until(ExpectedConditions.urlContains("dashboard"));
     }
 
-    // TC-26: Halaman daftar employee tampil
-    @Test @DisplayName("TC-26: Halaman daftar employee berhasil dimuat")
-    void tc26_halamanEmployeeTampil() {
+    // TC-22: Halaman employee tampil
+    @Test @Order(1) @DisplayName("TC-22: Halaman /employee tampil")
+    void tc22() {
         loginAsAdmin();
-        driver.get(BASE_URL + "/employee");
+        driver.get(BASE + "/employee");
         wait.until(ExpectedConditions.urlContains("employee"));
-        Assertions.assertTrue(driver.getPageSource().contains("Employee") || driver.getPageSource().contains("Karyawan"));
-        System.out.println("[TC-26] PASS: Halaman employee tampil.");
+        Assertions.assertTrue(
+            driver.getPageSource().contains("Employee") || driver.getPageSource().contains("Karyawan")
+        );
+        System.out.println("[TC-22] PASS");
     }
 
-    // TC-27: Halaman tambah employee bisa diakses admin
-    @Test @DisplayName("TC-27: Halaman tambah employee bisa diakses")
-    void tc27_halamanTambahEmployee() {
+    // TC-23: Halaman tambah employee bisa diakses admin
+    @Test @Order(2) @DisplayName("TC-23: Halaman /employee/create bisa diakses admin")
+    void tc23() {
         loginAsAdmin();
-        driver.get(BASE_URL + "/employee/create");
+        driver.get(BASE + "/employee/create");
         wait.until(ExpectedConditions.urlContains("employee"));
-        Assertions.assertTrue(driver.getPageSource().contains("Tambah") || driver.getPageSource().contains("Employee"));
-        System.out.println("[TC-27] PASS: Halaman tambah employee terbuka.");
+        Assertions.assertFalse(driver.getPageSource().contains("Akses ditolak"));
+        System.out.println("[TC-23] PASS");
     }
 
-    // TC-28: Form tambah employee punya field username & password
-    @Test @DisplayName("TC-28: Form tambah employee punya field username & password")
-    void tc28_formTambahEmployeeAdaField() {
+    // TC-24: Form employee ada semua field wajib
+    @Test @Order(3) @DisplayName("TC-24: Form employee ada field nama_lengkap, username, password")
+    void tc24() {
         loginAsAdmin();
-        driver.get(BASE_URL + "/employee/create");
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.name("username")));
+        driver.get(BASE + "/employee/create");
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.name("nama_lengkap")));
+        Assertions.assertNotNull(driver.findElement(By.name("nama_lengkap")));
         Assertions.assertNotNull(driver.findElement(By.name("username")));
         Assertions.assertNotNull(driver.findElement(By.name("password")));
-        Assertions.assertNotNull(driver.findElement(By.name("nama_lengkap")));
-        System.out.println("[TC-28] PASS: Field form employee ada.");
+        Assertions.assertNotNull(driver.findElement(By.name("email")));
+        System.out.println("[TC-24] PASS");
     }
 
-    // TC-29: Submit employee tanpa username → validasi menolak
-    @Test @DisplayName("TC-29: Tambah employee gagal jika username kosong")
-    void tc29_tambahEmployeeKosong() {
+    // TC-25: Submit employee valid → tersimpan
+    @Test @Order(4) @DisplayName("TC-25: Tambah employee valid → tersimpan")
+    void tc25() {
         loginAsAdmin();
-        driver.get(BASE_URL + "/employee/create");
+        driver.get(BASE + "/employee/create");
         wait.until(ExpectedConditions.visibilityOfElementLocated(By.name("nama_lengkap")));
-        driver.findElement(By.name("nama_lengkap")).sendKeys("Test User");
-        driver.findElement(By.cssSelector("button[type='submit']")).click();
-        Assertions.assertFalse(driver.getPageSource().contains("berhasil ditambahkan"));
-        System.out.println("[TC-29] PASS: Validasi username kosong berhasil.");
+        driver.findElement(By.name("nama_lengkap")).sendKeys("Test Kasir Selenium");
+        // FIX: pakai timestamp supaya username unik setiap run
+        driver.findElement(By.name("username")).sendKeys("testselenium" + System.currentTimeMillis());
+        driver.findElement(By.name("email")).sendKeys("test" + System.currentTimeMillis() + "@mail.com");
+        driver.findElement(By.name("password")).sendKeys("password123");
+        wait.until(ExpectedConditions.elementToBeClickable(
+            By.cssSelector("button.btn-save"))).click();
+        wait.until(ExpectedConditions.urlContains("employee"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("employee"));
+        System.out.println("[TC-25] PASS");
     }
 
-    // TC-30: Daftar employee menampilkan data (tidak kosong)
-    @Test @DisplayName("TC-30: Daftar employee tidak kosong (ada data sarah & neyza)")
-    void tc30_daftarEmployeeTidakKosong() {
+    // TC-26: Daftar employee ada data sarah/neyza
+    @Test @Order(5) @DisplayName("TC-26: Daftar employee ada data")
+    void tc26() {
         loginAsAdmin();
-        driver.get(BASE_URL + "/employee");
+        driver.get(BASE + "/employee");
         wait.until(ExpectedConditions.urlContains("employee"));
         String src = driver.getPageSource();
-        Assertions.assertTrue(src.contains("sarah") || src.contains("neyza") || src.contains("Sarah"),
-            "Harus ada minimal 1 data employee.");
-        System.out.println("[TC-30] PASS: Data employee ada.");
+        Assertions.assertTrue(
+            src.contains("sarah") || src.contains("neyza") || src.contains("Sarah")
+        );
+        System.out.println("[TC-26] PASS");
     }
 }

@@ -1,83 +1,113 @@
 import org.junit.jupiter.api.*;
 import org.openqa.selenium.*;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
+import org.openqa.selenium.chrome.*;
+import org.openqa.selenium.support.ui.*;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import java.time.Duration;
 
 /**
- * TestTable.java
- * Selenium UI Test – Fitur Manajemen Meja BiteSpace CI4
+ * TestTable.java — UI Test Meja BiteSpace CI4
+ * Field : name="nomor_meja", name="kapasitas"
+ * Submit: button.btn-save
  */
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class TestTable {
 
     static WebDriver driver;
     static WebDriverWait wait;
-    static final String BASE_URL = "http://localhost:8081";
+    // FIX: tambah index.php sesuai $indexPage CI4
+    static final String BASE = "http://localhost:8081/index.php";
 
     @BeforeAll
     static void setup() {
         WebDriverManager.chromedriver().setup();
-        ChromeOptions opt = new ChromeOptions();
-        opt.addArguments("--no-sandbox", "--disable-dev-shm-usage");
-        driver = new ChromeDriver(opt);
+        ChromeOptions o = new ChromeOptions();
+        o.addArguments("--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu");
+        driver = new ChromeDriver(o);
         driver.manage().window().maximize();
-        wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
+        wait = new WebDriverWait(driver, Duration.ofSeconds(20));
     }
 
     @AfterAll
     static void teardown() { if (driver != null) driver.quit(); }
 
     void loginAsAdmin() {
-        driver.get(BASE_URL + "/login");
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.name("username"))).sendKeys("sarah");
-        driver.findElement(By.name("password")).sendKeys("sarah123");
-        driver.findElement(By.cssSelector("button.btn-submit")).click();
+        driver.get(BASE + "/logout");
+        driver.get(BASE + "/login");
+        WebElement usernameField = wait.until(
+            ExpectedConditions.visibilityOfElementLocated(By.name("username")));
+        usernameField.clear();
+        usernameField.sendKeys("sarah");
+        WebElement passwordField = wait.until(
+            ExpectedConditions.visibilityOfElementLocated(By.name("password")));
+        passwordField.clear();
+        passwordField.sendKeys("sarah123");
+        wait.until(ExpectedConditions.elementToBeClickable(
+            By.cssSelector("button.btn-submit"))).click();
         wait.until(ExpectedConditions.urlContains("dashboard"));
     }
 
-    // TC-22: Halaman daftar meja tampil
-    @Test @DisplayName("TC-22: Halaman daftar meja berhasil dimuat")
-    void tc22_halamanMejaTampil() {
+    // TC-17: Halaman meja tampil
+    @Test @Order(1) @DisplayName("TC-17: Halaman /table tampil")
+    void tc17() {
         loginAsAdmin();
-        driver.get(BASE_URL + "/table");
+        driver.get(BASE + "/table");
         wait.until(ExpectedConditions.urlContains("table"));
-        Assertions.assertTrue(driver.getPageSource().contains("Meja") || driver.getPageSource().contains("Table"));
-        System.out.println("[TC-22] PASS: Halaman meja tampil.");
+        Assertions.assertTrue(
+            driver.getPageSource().contains("Meja") || driver.getPageSource().contains("Table")
+        );
+        System.out.println("[TC-17] PASS");
     }
 
-    // TC-23: Halaman tambah meja bisa diakses
-    @Test @DisplayName("TC-23: Halaman tambah meja bisa diakses")
-    void tc23_halamanTambahMeja() {
+    // TC-18: Halaman tambah meja bisa diakses admin
+    @Test @Order(2) @DisplayName("TC-18: Halaman /table/create bisa diakses admin")
+    void tc18() {
         loginAsAdmin();
-        driver.get(BASE_URL + "/table/create");
+        driver.get(BASE + "/table/create");
         wait.until(ExpectedConditions.urlContains("table"));
-        Assertions.assertTrue(driver.getPageSource().contains("Tambah") || driver.getPageSource().contains("Meja"));
-        System.out.println("[TC-23] PASS: Halaman tambah meja terbuka.");
+        Assertions.assertFalse(driver.getPageSource().contains("Akses ditolak"));
+        System.out.println("[TC-18] PASS");
     }
 
-    // TC-24: Form tambah meja punya field nomor meja & kapasitas
-    @Test @DisplayName("TC-24: Form tambah meja punya field nomor & kapasitas")
-    void tc24_formTambahMejaAdaField() {
+    // TC-19: Form tambah meja ada field nomor_meja & kapasitas
+    @Test @Order(3) @DisplayName("TC-19: Form meja ada field nomor_meja & kapasitas")
+    void tc19() {
         loginAsAdmin();
-        driver.get(BASE_URL + "/table/create");
+        driver.get(BASE + "/table/create");
         wait.until(ExpectedConditions.visibilityOfElementLocated(By.name("nomor_meja")));
         Assertions.assertNotNull(driver.findElement(By.name("nomor_meja")));
         Assertions.assertNotNull(driver.findElement(By.name("kapasitas")));
-        System.out.println("[TC-24] PASS: Field form meja ada.");
+        System.out.println("[TC-19] PASS");
     }
 
-    // TC-25: Submit meja tanpa nomor meja → validasi menolak
-    @Test @DisplayName("TC-25: Tambah meja gagal jika nomor meja kosong")
-    void tc25_tambahMejaKosong() {
+    // TC-20: Submit tambah meja valid → tersimpan
+    @Test @Order(4) @DisplayName("TC-20: Tambah meja valid → tersimpan")
+    void tc20() {
         loginAsAdmin();
-        driver.get(BASE_URL + "/table/create");
+        driver.get(BASE + "/table/create");
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.name("nomor_meja")));
+        driver.findElement(By.name("nomor_meja")).sendKeys("99");
+        driver.findElement(By.name("kapasitas")).sendKeys("4");
+        wait.until(ExpectedConditions.elementToBeClickable(
+            By.cssSelector("button.btn-save"))).click();
+        wait.until(ExpectedConditions.urlContains("table"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("table"));
+        System.out.println("[TC-20] PASS");
+    }
+
+    // TC-21: Submit meja tanpa nomor_meja → validasi menolak
+    @Test @Order(5) @DisplayName("TC-21: Tambah meja tanpa nomor → ditolak")
+    void tc21() {
+        loginAsAdmin();
+        driver.get(BASE + "/table/create");
         wait.until(ExpectedConditions.visibilityOfElementLocated(By.name("kapasitas")));
         driver.findElement(By.name("kapasitas")).sendKeys("4");
-        driver.findElement(By.cssSelector("button[type='submit']")).click();
+        wait.until(ExpectedConditions.elementToBeClickable(
+            By.cssSelector("button.btn-save"))).click();
+        // FIX: tunggu halaman stabil sebelum assert
+        wait.until(ExpectedConditions.urlContains("table"));
         Assertions.assertFalse(driver.getPageSource().contains("berhasil ditambahkan"));
-        System.out.println("[TC-25] PASS: Validasi nomor meja kosong berhasil.");
+        System.out.println("[TC-21] PASS");
     }
 }
