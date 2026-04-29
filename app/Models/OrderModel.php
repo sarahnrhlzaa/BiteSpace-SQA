@@ -28,7 +28,12 @@ class OrderModel extends Model
     protected $deletedField  = 'deleted_at';
 
     // Validation
-    protected $validationRules      = [];
+    protected $validationRules      = [
+        'id_table'    => 'required|integer',
+        'id_user'     => 'required|integer',
+        'kode_order'  => 'required|is_unique[order.kode_order]',
+        'total_harga' => 'required|numeric|greater_than_equal_to[0]'
+    ];
     protected $validationMessages   = [];
     protected $skipValidation       = false;
     protected $cleanValidationRules = true;
