@@ -5,8 +5,7 @@ namespace Tests\Unit\Models;
 use CodeIgniter\Test\CIUnitTestCase;
 
 /**
- * Unit test untuk UserModel.
- * Tidak menggunakan database — hanya menguji logika validasi dan autentikasi.
+ * Unit test untuk UserModel - menguji logika validasi dan autentikasi.
  */
 final class UserModelTest extends CIUnitTestCase
 {

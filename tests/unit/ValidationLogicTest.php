@@ -16,9 +16,7 @@ final class ValidationLogicTest extends CIUnitTestCase
         return $validation->run($data);
     }
 
-    // =========================================================
     // LOGIN VALIDATION
-    // =========================================================
 
     private function loginRules(): array
     {
@@ -64,9 +62,7 @@ final class ValidationLogicTest extends CIUnitTestCase
         $this->assertFalse($result, "Semua field kosong harus gagal validasi.");
     }
 
-    // =========================================================
     // MENU VALIDATION
-    // =========================================================
 
     private function menuRules(): array
     {
@@ -137,9 +133,7 @@ final class ValidationLogicTest extends CIUnitTestCase
         $this->assertFalse($result, "nama_menu > 150 karakter harus gagal validasi.");
     }
 
-    // =========================================================
     // ROLE / SESSION LOGIC
-    // =========================================================
 
     public function testIsAdminReturnTrueForAdmin(): void
     {
@@ -165,9 +159,7 @@ final class ValidationLogicTest extends CIUnitTestCase
         $this->assertFalse($isAdmin, "Role kosong tidak boleh dianggap admin.");
     }
 
-    // =========================================================
     // PROMO VALIDATION
-    // =========================================================
 
     private function promoRules(): array
     {
