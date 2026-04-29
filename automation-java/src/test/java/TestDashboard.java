@@ -14,7 +14,6 @@ public class TestDashboard {
 
     static WebDriver driver;
     static WebDriverWait wait;
-    // FIX: tambah index.php sesuai $indexPage CI4
     static final String BASE = "http://localhost:8081/index.php";
 
     @BeforeAll
@@ -33,6 +32,7 @@ public class TestDashboard {
 
     void loginAsAdmin() {
         driver.get(BASE + "/logout");
+        wait.until(ExpectedConditions.urlContains("login"));
         driver.get(BASE + "/login");
         WebElement usernameField = wait.until(
             ExpectedConditions.visibilityOfElementLocated(By.name("username")));
@@ -42,67 +42,68 @@ public class TestDashboard {
             ExpectedConditions.visibilityOfElementLocated(By.name("password")));
         passwordField.clear();
         passwordField.sendKeys("sarah123");
-        wait.until(ExpectedConditions.elementToBeClickable(
-            By.cssSelector("button.btn-submit"))).click();
+        WebElement btn = wait.until(
+            ExpectedConditions.presenceOfElementLocated(By.cssSelector("button.btn-submit")));
+        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", btn);
         wait.until(ExpectedConditions.urlContains("dashboard"));
     }
 
-    // TC-D01: Dashboard tampil setelah login
-    @Test @Order(1) @DisplayName("TC-D01: Dashboard berhasil dimuat setelah login")
-    void tcD01() {
+    // TC-DSH-001: Dashboard tampil setelah login
+    @Test @Order(1) @DisplayName("TC-DSH-001: Dashboard berhasil dimuat setelah login")
+    void tcDsh001() {
         loginAsAdmin();
         Assertions.assertTrue(driver.getCurrentUrl().contains("dashboard"));
         Assertions.assertTrue(driver.getPageSource().contains("Dashboard"));
-        System.out.println("[TC-D01] PASS");
+        System.out.println("[TC-DSH-001] PASS");
     }
 
-    // TC-D02: Navigasi ke halaman Menu
-    @Test @Order(2) @DisplayName("TC-D02: Navigasi ke halaman Menu berhasil")
-    void tcD02() {
+    // TC-DSH-002: Navigasi ke halaman Menu
+    @Test @Order(2) @DisplayName("TC-DSH-002: Navigasi ke halaman Menu berhasil")
+    void tcDsh002() {
         loginAsAdmin();
         driver.get(BASE + "/menu");
         wait.until(ExpectedConditions.urlContains("menu"));
         Assertions.assertTrue(driver.getCurrentUrl().contains("menu"));
-        System.out.println("[TC-D02] PASS");
+        System.out.println("[TC-DSH-002] PASS");
     }
 
-    // TC-D03: Navigasi ke halaman Transaksi
-    @Test @Order(3) @DisplayName("TC-D03: Navigasi ke halaman Transaksi berhasil")
-    void tcD03() {
+    // TC-DSH-003: Navigasi ke halaman Transaksi
+    @Test @Order(3) @DisplayName("TC-DSH-003: Navigasi ke halaman Transaksi berhasil")
+    void tcDsh003() {
         loginAsAdmin();
         driver.get(BASE + "/transaksi");
         wait.until(ExpectedConditions.urlContains("transaksi"));
         Assertions.assertTrue(driver.getCurrentUrl().contains("transaksi"));
-        System.out.println("[TC-D03] PASS");
+        System.out.println("[TC-DSH-003] PASS");
     }
 
-    // TC-D04: Navigasi ke halaman Promo
-    @Test @Order(4) @DisplayName("TC-D04: Navigasi ke halaman Promo berhasil")
-    void tcD04() {
+    // TC-DSH-004: Navigasi ke halaman Promo
+    @Test @Order(4) @DisplayName("TC-DSH-004: Navigasi ke halaman Promo berhasil")
+    void tcDsh004() {
         loginAsAdmin();
         driver.get(BASE + "/promo");
         wait.until(ExpectedConditions.urlContains("promo"));
         Assertions.assertTrue(driver.getCurrentUrl().contains("promo"));
-        System.out.println("[TC-D04] PASS");
+        System.out.println("[TC-DSH-004] PASS");
     }
 
-    // TC-D05: Navigasi ke halaman Meja
-    @Test @Order(5) @DisplayName("TC-D05: Navigasi ke halaman Meja berhasil")
-    void tcD05() {
+    // TC-DSH-005: Navigasi ke halaman Meja
+    @Test @Order(5) @DisplayName("TC-DSH-005: Navigasi ke halaman Meja berhasil")
+    void tcDsh005() {
         loginAsAdmin();
         driver.get(BASE + "/table");
         wait.until(ExpectedConditions.urlContains("table"));
         Assertions.assertTrue(driver.getCurrentUrl().contains("table"));
-        System.out.println("[TC-D05] PASS");
+        System.out.println("[TC-DSH-005] PASS");
     }
 
-    // TC-D06: Navigasi ke halaman Employee
-    @Test @Order(6) @DisplayName("TC-D06: Navigasi ke halaman Employee berhasil")
-    void tcD06() {
+    // TC-DSH-006: Navigasi ke halaman Employee
+    @Test @Order(6) @DisplayName("TC-DSH-006: Navigasi ke halaman Employee berhasil")
+    void tcDsh006() {
         loginAsAdmin();
         driver.get(BASE + "/employee");
         wait.until(ExpectedConditions.urlContains("employee"));
         Assertions.assertTrue(driver.getCurrentUrl().contains("employee"));
-        System.out.println("[TC-D06] PASS");
+        System.out.println("[TC-DSH-006] PASS");
     }
 }

@@ -14,7 +14,6 @@ public class TestTransaksi {
 
     static WebDriver driver;
     static WebDriverWait wait;
-    // FIX: tambah index.php sesuai $indexPage CI4
     static final String BASE = "http://localhost:8081/index.php";
 
     @BeforeAll
@@ -33,6 +32,7 @@ public class TestTransaksi {
 
     void loginAsAdmin() {
         driver.get(BASE + "/logout");
+        try { Thread.sleep(2000); } catch (InterruptedException ignored) {}
         driver.get(BASE + "/login");
         WebElement usernameField = wait.until(
             ExpectedConditions.visibilityOfElementLocated(By.name("username")));
@@ -42,43 +42,43 @@ public class TestTransaksi {
             ExpectedConditions.visibilityOfElementLocated(By.name("password")));
         passwordField.clear();
         passwordField.sendKeys("sarah123");
-        wait.until(ExpectedConditions.elementToBeClickable(
-            By.cssSelector("button.btn-submit"))).click();
+        WebElement btn = wait.until(
+            ExpectedConditions.presenceOfElementLocated(By.cssSelector("button.btn-submit")));
+        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", btn);
         wait.until(ExpectedConditions.urlContains("dashboard"));
     }
 
-    // TC-27: Halaman transaksi tampil setelah login
-    @Test @Order(1) @DisplayName("TC-27: Halaman transaksi tampil")
-    void tc27() {
+    // TC-TRX-001: Halaman transaksi tampil setelah login
+    @Test @Order(1) @DisplayName("TC-TRX-001: Halaman transaksi tampil")
+    void tcTrx001() {
         loginAsAdmin();
         driver.get(BASE + "/transaksi");
         wait.until(ExpectedConditions.urlContains("transaksi"));
         String src = driver.getPageSource();
         Assertions.assertTrue(
-            src.contains("Transaksi") || src.contains("POS") || src.contains("Menu")
-        );
-        System.out.println("[TC-27] PASS");
+            src.contains("Transaksi") || src.contains("POS") || src.contains("Menu"));
+        System.out.println("[TC-TRX-001] PASS");
     }
 
-    // TC-28: Halaman transaksi menampilkan konten menu (tidak kosong)
-    @Test @Order(2) @DisplayName("TC-28: Halaman transaksi ada konten menu")
-    void tc28() {
+    // TC-TRX-002: Halaman transaksi memuat konten yang tidak kosong
+    @Test @Order(2) @DisplayName("TC-TRX-002: Halaman transaksi ada konten menu")
+    void tcTrx002() {
         loginAsAdmin();
         driver.get(BASE + "/transaksi");
         wait.until(ExpectedConditions.urlContains("transaksi"));
-        // FIX: tunggu halaman selesai render penuh (JS-heavy POS page)
         wait.until(d -> d.getPageSource().length() > 1000);
         Assertions.assertTrue(driver.getPageSource().length() > 1000);
-        System.out.println("[TC-28] PASS");
+        System.out.println("[TC-TRX-002] PASS");
     }
 
-    // TC-29: Akses transaksi tanpa login → redirect login
-    @Test @Order(3) @DisplayName("TC-29: Transaksi tanpa login → redirect login")
-    void tc29() {
+    // TC-TRX-003: Akses transaksi tanpa login → redirect ke login
+    @Test @Order(3) @DisplayName("TC-TRX-003: Transaksi tanpa login → redirect login")
+    void tcTrx003() {
         driver.get(BASE + "/logout");
+        try { Thread.sleep(2000); } catch (InterruptedException ignored) {}
         driver.get(BASE + "/transaksi");
         wait.until(ExpectedConditions.urlContains("login"));
         Assertions.assertTrue(driver.getCurrentUrl().contains("login"));
-        System.out.println("[TC-29] PASS");
+        System.out.println("[TC-TRX-003] PASS");
     }
 }

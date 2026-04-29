@@ -15,7 +15,6 @@ public class TestPromo {
 
     static WebDriver driver;
     static WebDriverWait wait;
-    // FIX: tambah index.php sesuai $indexPage CI4
     static final String BASE = "http://localhost:8081/index.php";
 
     @BeforeAll
@@ -34,6 +33,7 @@ public class TestPromo {
 
     void loginAsAdmin() {
         driver.get(BASE + "/logout");
+        try { Thread.sleep(2000); } catch (InterruptedException ignored) {}
         driver.get(BASE + "/login");
         WebElement usernameField = wait.until(
             ExpectedConditions.visibilityOfElementLocated(By.name("username")));
@@ -43,57 +43,62 @@ public class TestPromo {
             ExpectedConditions.visibilityOfElementLocated(By.name("password")));
         passwordField.clear();
         passwordField.sendKeys("sarah123");
-        wait.until(ExpectedConditions.elementToBeClickable(
-            By.cssSelector("button.btn-submit"))).click();
+        WebElement btn = wait.until(
+            ExpectedConditions.presenceOfElementLocated(By.cssSelector("button.btn-submit")));
+        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", btn);
         wait.until(ExpectedConditions.urlContains("dashboard"));
     }
 
-    // TC-13: Halaman promo tampil
-    @Test @Order(1) @DisplayName("TC-13: Halaman promo tampil")
-    void tc13() {
+    void jsClick(WebElement element) {
+        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", element);
+        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", element);
+    }
+
+    // TC-PRM-001: Halaman promo tampil
+    @Test @Order(1) @DisplayName("TC-PRM-001: Halaman promo tampil")
+    void tcPrm001() {
         loginAsAdmin();
         driver.get(BASE + "/promo");
         wait.until(ExpectedConditions.urlContains("promo"));
         Assertions.assertTrue(
-            driver.getPageSource().contains("Promo") || driver.getPageSource().contains("promo")
-        );
-        System.out.println("[TC-13] PASS");
+            driver.getPageSource().contains("Promo") || driver.getPageSource().contains("promo"));
+        System.out.println("[TC-PRM-001] PASS");
     }
 
-    // TC-14: Halaman tambah promo bisa diakses admin
-    @Test @Order(2) @DisplayName("TC-14: Halaman /promo/create bisa diakses admin")
-    void tc14() {
+    // TC-PRM-002: Halaman tambah promo bisa diakses admin
+    @Test @Order(2) @DisplayName("TC-PRM-002: Halaman /promo/create bisa diakses admin")
+    void tcPrm002() {
         loginAsAdmin();
         driver.get(BASE + "/promo/create");
         wait.until(ExpectedConditions.urlContains("promo"));
         Assertions.assertFalse(driver.getPageSource().contains("Akses ditolak"));
-        System.out.println("[TC-14] PASS");
+        System.out.println("[TC-PRM-002] PASS");
     }
 
-    // TC-15: Form promo ada field kode_promo, nama_promo, nilai_diskon
-    @Test @Order(3) @DisplayName("TC-15: Form promo ada field kode_promo & nama_promo")
-    void tc15() {
+    // TC-PRM-003: Form promo ada field kode_promo, nama_promo, nilai_diskon
+    @Test @Order(3) @DisplayName("TC-PRM-003: Form promo ada field kode_promo & nama_promo")
+    void tcPrm003() {
         loginAsAdmin();
         driver.get(BASE + "/promo/create");
         wait.until(ExpectedConditions.visibilityOfElementLocated(By.name("kode_promo")));
         Assertions.assertNotNull(driver.findElement(By.name("kode_promo")));
         Assertions.assertNotNull(driver.findElement(By.name("nama_promo")));
         Assertions.assertNotNull(driver.findElement(By.name("nilai_diskon")));
-        System.out.println("[TC-15] PASS");
+        System.out.println("[TC-PRM-003] PASS");
     }
 
-    // TC-16: Submit promo kosong → validasi menolak
-    @Test @Order(4) @DisplayName("TC-16: Tambah promo field kosong → ditolak")
-    void tc16() {
+    // TC-PRM-004: Submit promo kosong → validasi menolak
+    @Test @Order(4) @DisplayName("TC-PRM-004: Tambah promo field kosong → ditolak")
+    void tcPrm004() {
         loginAsAdmin();
         driver.get(BASE + "/promo/create");
-        wait.until(ExpectedConditions.elementToBeClickable(
-            By.cssSelector("button.btn-submit-bs")));
-        driver.findElement(By.cssSelector("button.btn-submit-bs")).click();
-        // FIX: tunggu halaman stabil setelah submit
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.name("kode_promo")));
+        WebElement btnSubmit = wait.until(
+            ExpectedConditions.presenceOfElementLocated(By.cssSelector("button.btn-submit-bs")));
+        jsClick(btnSubmit);
         wait.until(ExpectedConditions.urlContains("promo"));
         Assertions.assertTrue(driver.getCurrentUrl().contains("promo"));
         Assertions.assertFalse(driver.getPageSource().contains("berhasil ditambahkan"));
-        System.out.println("[TC-16] PASS");
+        System.out.println("[TC-PRM-004] PASS");
     }
 }

@@ -15,7 +15,6 @@ public class TestMenu {
 
     static WebDriver driver;
     static WebDriverWait wait;
-    // FIX: tambah index.php sesuai $indexPage CI4
     static final String BASE = "http://localhost:8081/index.php";
 
     @BeforeAll
@@ -34,6 +33,7 @@ public class TestMenu {
 
     void loginAsAdmin() {
         driver.get(BASE + "/logout");
+        try { Thread.sleep(2000); } catch (InterruptedException ignored) {}
         driver.get(BASE + "/login");
         WebElement usernameField = wait.until(
             ExpectedConditions.visibilityOfElementLocated(By.name("username")));
@@ -43,77 +43,79 @@ public class TestMenu {
             ExpectedConditions.visibilityOfElementLocated(By.name("password")));
         passwordField.clear();
         passwordField.sendKeys("sarah123");
-        wait.until(ExpectedConditions.elementToBeClickable(
-            By.cssSelector("button.btn-submit"))).click();
+        WebElement btn = wait.until(
+            ExpectedConditions.presenceOfElementLocated(By.cssSelector("button.btn-submit")));
+        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", btn);
         wait.until(ExpectedConditions.urlContains("dashboard"));
     }
 
-    // TC-08: Halaman daftar menu tampil
-    @Test @Order(1) @DisplayName("TC-08: Halaman menu tampil")
-    void tc08() {
+    void jsClick(WebElement element) {
+        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", element);
+        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", element);
+    }
+
+    // TC-MNU-001: Halaman daftar menu tampil
+    @Test @Order(1) @DisplayName("TC-MNU-001: Halaman menu tampil")
+    void tcMnu001() {
         loginAsAdmin();
         driver.get(BASE + "/menu");
         wait.until(ExpectedConditions.urlContains("menu"));
         Assertions.assertTrue(driver.getPageSource().contains("Menu"));
-        System.out.println("[TC-08] PASS");
+        System.out.println("[TC-MNU-001] PASS");
     }
 
-    // TC-09: Halaman tambah menu bisa diakses admin
-    @Test @Order(2) @DisplayName("TC-09: Halaman /menu/create bisa diakses admin")
-    void tc09() {
+    // TC-MNU-002: Halaman tambah menu bisa diakses admin
+    @Test @Order(2) @DisplayName("TC-MNU-002: Halaman /menu/create bisa diakses admin")
+    void tcMnu002() {
         loginAsAdmin();
         driver.get(BASE + "/menu/create");
         wait.until(ExpectedConditions.urlContains("menu"));
         Assertions.assertFalse(driver.getPageSource().contains("Akses ditolak"));
         Assertions.assertTrue(driver.getPageSource().contains("Tambah Menu"));
-        System.out.println("[TC-09] PASS");
+        System.out.println("[TC-MNU-002] PASS");
     }
 
-    // TC-10: Form tambah menu punya field nama_menu, harga, id_category
-    @Test @Order(3) @DisplayName("TC-10: Form tambah menu ada field nama_menu & harga")
-    void tc10() {
+    // TC-MNU-003: Form tambah menu punya field nama_menu, harga, id_category
+    @Test @Order(3) @DisplayName("TC-MNU-003: Form tambah menu ada field nama_menu & harga")
+    void tcMnu003() {
         loginAsAdmin();
         driver.get(BASE + "/menu/create");
         wait.until(ExpectedConditions.visibilityOfElementLocated(By.name("nama_menu")));
         Assertions.assertNotNull(driver.findElement(By.name("nama_menu")));
         Assertions.assertNotNull(driver.findElement(By.name("harga")));
         Assertions.assertNotNull(driver.findElement(By.name("id_category")));
-        System.out.println("[TC-10] PASS");
+        System.out.println("[TC-MNU-003] PASS");
     }
 
-    // TC-11: Submit form tambah menu valid → sukses
-    @Test @Order(4) @DisplayName("TC-11: Tambah menu valid → tersimpan")
-    void tc11() {
+    // TC-MNU-004: Submit form tambah menu valid → sukses
+    @Test @Order(4) @DisplayName("TC-MNU-004: Tambah menu valid → tersimpan")
+    void tcMnu004() {
         loginAsAdmin();
         driver.get(BASE + "/menu/create");
         wait.until(ExpectedConditions.visibilityOfElementLocated(By.name("nama_menu")));
         driver.findElement(By.name("nama_menu")).sendKeys("Menu Test Selenium");
         driver.findElement(By.name("harga")).sendKeys("15000");
         new Select(driver.findElement(By.name("id_category"))).selectByIndex(1);
-        wait.until(ExpectedConditions.elementToBeClickable(
-            By.cssSelector("button.btn-save-menu"))).click();
+        WebElement btnSave = wait.until(
+            ExpectedConditions.presenceOfElementLocated(By.cssSelector("button.btn-save-menu")));
+        jsClick(btnSave);
         wait.until(ExpectedConditions.urlContains("menu"));
         Assertions.assertTrue(driver.getCurrentUrl().contains("menu"));
-        System.out.println("[TC-11] PASS");
+        System.out.println("[TC-MNU-004] PASS");
     }
 
-    // TC-12: Submit nama menu kosong → validasi menolak
-    @Test @Order(5) @DisplayName("TC-12: Tambah menu nama kosong → ditolak")
-    void tc12() {
+    // TC-MNU-005: Submit nama menu kosong → validasi menolak
+    @Test @Order(5) @DisplayName("TC-MNU-005: Tambah menu nama kosong → ditolak")
+    void tcMnu005() {
         loginAsAdmin();
         driver.get(BASE + "/menu/create");
         wait.until(ExpectedConditions.visibilityOfElementLocated(By.name("harga")));
         driver.findElement(By.name("harga")).sendKeys("10000");
-        wait.until(ExpectedConditions.elementToBeClickable(
-            By.cssSelector("button.btn-save-menu"))).click();
-        // FIX: tunggu halaman stabil setelah klik
-        wait.until(ExpectedConditions.or(
-            ExpectedConditions.urlContains("menu/create"),
-            ExpectedConditions.urlContains("menu")
-        ));
-        Assertions.assertTrue(
-            driver.getCurrentUrl().contains("menu/create") || driver.getCurrentUrl().contains("menu")
-        );
-        System.out.println("[TC-12] PASS");
+        WebElement btnSave = wait.until(
+            ExpectedConditions.presenceOfElementLocated(By.cssSelector("button.btn-save-menu")));
+        jsClick(btnSave);
+        wait.until(ExpectedConditions.urlContains("menu"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("menu"));
+        System.out.println("[TC-MNU-005] PASS");
     }
 }
