@@ -5,8 +5,7 @@ namespace Tests\Unit\Models;
 use CodeIgniter\Test\CIUnitTestCase;
 
 /**
- * Unit test untuk OrderDetailModel.
- * Tidak menggunakan database — hanya menguji logika validasi dan perhitungan subtotal.
+ * Unit test untuk OrderDetailModel - hanya menguji logika validasi dan perhitungan subtotal.
  */
 final class OrderDetailModelTest extends CIUnitTestCase
 {

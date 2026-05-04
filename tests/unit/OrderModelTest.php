@@ -5,8 +5,7 @@ namespace Tests\Unit\Models;
 use CodeIgniter\Test\CIUnitTestCase;
 
 /**
- * Unit test untuk OrderModel.
- * Tidak menggunakan database — hanya menguji logika validasi dan status order.
+ * Unit test untuk OrderModel — hanya menguji logika validasi dan status order.
  */
 final class OrderModelTest extends CIUnitTestCase
 {
@@ -83,7 +82,7 @@ final class OrderModelTest extends CIUnitTestCase
         $this->assertTrue($result, "Data order valid harus lulus validasi.");
     }
 
-    // Simulasi logika update total_harga (tanpa DB)
+    // Simulasi logika update total_harga
     public function testUpdateTotalHargaLogika(): void
     {
         // Representasi data order dalam array

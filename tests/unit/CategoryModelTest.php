@@ -5,8 +5,7 @@ namespace Tests\Unit\Models;
 use CodeIgniter\Test\CIUnitTestCase;
 
 /**
- * Unit test untuk CategoryModel.
- * Tidak menggunakan database — hanya menguji logika validasi rule secara murni.
+ * Unit test untuk CategoryModel — hanya menguji logika validasi rule secara murni.
  */
 final class CategoryModelTest extends CIUnitTestCase
 {

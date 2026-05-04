@@ -5,8 +5,7 @@ namespace Tests\Unit\Models;
 use CodeIgniter\Test\CIUnitTestCase;
 
 /**
- * Unit test untuk CustomerModel.
- * Tidak menggunakan database — hanya menguji logika validasi rule secara murni.
+ * Unit test untuk CustomerModel — hanya menguji logika validasi rule secara murni.
  */
 final class CustomerModelTest extends CIUnitTestCase
 {
@@ -61,16 +60,16 @@ final class CustomerModelTest extends CIUnitTestCase
         $this->assertTrue($result, "Data customer valid harus lulus validasi.");
     }
 
-    // Pencarian customer berdasarkan nama (simulasi logika filter, tanpa DB)
+    // Pencarian customer berdasarkan nama (simulasi logika filter)
     public function testCustomerSearchLogic(): void
     {
         // Simulasi array hasil query (seperti dari model->findAll())
         $customers = [
-            ['nama_customer' => 'Naufalnadi', 'telp' => '0811'],
+            ['nama_customer' => 'Neyza', 'telp' => '0811'],
             ['nama_customer' => 'Sarah Nurhaliza', 'telp' => '0822'],
         ];
 
-        $keyword = 'Naufalnadi';
+        $keyword = 'Neyza';
         $found   = array_filter($customers, fn($c) => $c['nama_customer'] === $keyword);
 
         $this->assertCount(1, $found);

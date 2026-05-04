@@ -5,8 +5,7 @@ namespace Tests\Unit\Models;
 use CodeIgniter\Test\CIUnitTestCase;
 
 /**
- * Unit test untuk MenuModel.
- * Tidak menggunakan database — hanya menguji logika validasi dan pengelompokan menu.
+ * Unit test untuk MenuModel — hanya menguji logika validasi dan pengelompokan menu.
  */
 final class MenuModelTest extends CIUnitTestCase
 {
