@@ -15,29 +15,29 @@ final class CustomerModelTest extends CIUnitTestCase
         $validation->reset();
         $validation->setRules([
             'nama_customer' => 'required|max_length[100]',
-            'telp'          => 'permit_empty|max_length[15]',
+            'telp'          => 'required|max_length[20]',
         ]);
         return $validation->run($data);
     }
 
-    // No. telp melebihi 15 digit → harus gagal
+    // No. telp melebihi 20 karakter → harus gagal (sesuai max_length[20] di CustomerModel)
     public function testNoTelpTerlaluPanjangGagal(): void
     {
         $result = $this->validate([
             'nama_customer' => 'Sarah Nurhaliza',
-            'telp'          => '08123456789092832003921234567', // > 15 digit
+            'telp'          => '081234567890123456789', // 21 karakter, > 20
         ]);
-        $this->assertFalse($result, "Nomor telepon > 15 karakter harus gagal validasi.");
+        $this->assertFalse($result, 'Nomor telepon > 20 karakter harus gagal validasi.');
     }
 
-    // No. telp tepat 15 digit → harus lolos (edge case)
-    public function testNoTelpTepat15DigitLulus(): void
+    // No. telp tepat 20 karakter → harus lolos (batas max_length[20] di CustomerModel)
+    public function testNoTelpTepat20KarakterLulus(): void
     {
         $result = $this->validate([
             'nama_customer' => 'Sarah Nurhaliza',
-            'telp'          => '081234567890123', // tepat 15
+            'telp'          => '08123456789012345678', // pas 20 karakter
         ]);
-        $this->assertTrue($result, "Nomor telepon tepat 15 karakter harus lulus validasi.");
+        $this->assertTrue($result, 'Nomor telepon tepat 20 karakter harus lulus validasi.');
     }
 
     // Nama customer kosong → harus gagal
@@ -47,7 +47,7 @@ final class CustomerModelTest extends CIUnitTestCase
             'nama_customer' => '',
             'telp'          => '0811234567',
         ]);
-        $this->assertFalse($result, "nama_customer kosong harus gagal validasi.");
+        $this->assertFalse($result, 'nama_customer kosong harus gagal validasi.');
     }
 
     // Data lengkap valid → harus lolos
@@ -57,10 +57,10 @@ final class CustomerModelTest extends CIUnitTestCase
             'nama_customer' => 'Naufalnadi',
             'telp'          => '0811',
         ]);
-        $this->assertTrue($result, "Data customer valid harus lulus validasi.");
+        $this->assertTrue($result, 'Data customer valid harus lulus validasi.');
     }
 
-    // Pencarian customer berdasarkan nama (simulasi logika filter)
+    // Pencarian customer berdasarkan nama
     public function testCustomerSearchLogic(): void
     {
         // Simulasi array hasil query (seperti dari model->findAll())

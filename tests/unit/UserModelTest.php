@@ -27,7 +27,7 @@ final class UserModelTest extends CIUnitTestCase
     {
         $result = $this->validate([
             'username'     => 'testuser',
-            'password'     => '123', // < 6 karakter
+            'password'     => '123',
             'role'         => 'kasir',
             'nama_lengkap' => 'Test User',
         ]);
@@ -52,7 +52,7 @@ final class UserModelTest extends CIUnitTestCase
         $result = $this->validate([
             'username'     => 'testuser',
             'password'     => 'password123',
-            'role'         => 'manager', // tidak valid
+            'role'         => 'manager',
             'nama_lengkap' => 'Test User',
         ]);
         $this->assertFalse($result, "Role selain admin/kasir harus gagal validasi.");
@@ -123,8 +123,72 @@ final class UserModelTest extends CIUnitTestCase
         $plain  = 'mypassword';
         $hashed = password_hash($plain, PASSWORD_DEFAULT);
 
-        // Hash berbeda setiap kali, tapi verify tetap benar
         $this->assertNotEquals($plain, $hashed, "Hash tidak boleh sama dengan plain text.");
         $this->assertTrue(password_verify($plain, $hashed));
+    }
+
+    // Logika ganti password
+
+    // Password lama salah → harus ditolak
+    public function testGantiPasswordLamaSalahGagal(): void
+    {
+        $passwordTersimpan = password_hash('sarah123', PASSWORD_DEFAULT);
+        $passwordLamaInput = 'passwordSalah';
+
+        $isValid = password_verify($passwordLamaInput, $passwordTersimpan);
+
+        $this->assertFalse($isValid, "Password lama yang salah harus ditolak.");
+    }
+
+    // Password baru kurang dari 6 karakter → harus ditolak
+    public function testGantiPasswordBaruTerlaluPendekGagal(): void
+    {
+        $passwordBaru = '123';
+
+        $isValid = strlen($passwordBaru) >= 6;
+
+        $this->assertFalse($isValid, "Password baru < 6 karakter harus ditolak.");
+    }
+
+    // Konfirmasi password tidak cocok → harus ditolak
+    public function testGantiPasswordKonfirmasiTidakCocokGagal(): void
+    {
+        $passwordBaru         = 'newpassword123';
+        $passwordKonfirmasi   = 'newpassword999';
+
+        $isMatch = $passwordBaru === $passwordKonfirmasi;
+
+        $this->assertFalse($isMatch, "Konfirmasi password yang tidak cocok harus ditolak.");
+    }
+
+    // Password baru sama dengan password lama → harus ditolak
+    public function testGantiPasswordBaruSamaDenganLamaGagal(): void
+    {
+        $passwordLama      = 'sarah123';
+        $hashedLama        = password_hash($passwordLama, PASSWORD_DEFAULT);
+        $passwordBaruInput = 'sarah123'; // sama dengan lama
+
+        $isSame = password_verify($passwordBaruInput, $hashedLama);
+
+        $this->assertTrue($isSame, "Sistem harus mendeteksi password baru sama dengan lama dan menolaknya.");
+    }
+
+    // Ganti password valid → semua kondisi terpenuhi
+    public function testGantiPasswordValidBerhasil(): void
+    {
+        $passwordLama      = 'sarah123';
+        $hashedLama        = password_hash($passwordLama, PASSWORD_DEFAULT);
+        $passwordBaru      = 'newpassword123';
+        $passwordKonfirm   = 'newpassword123';
+
+        $lamaBenar    = password_verify($passwordLama, $hashedLama);   // true
+        $cukupPanjang = strlen($passwordBaru) >= 6;                     // true
+        $cocok        = $passwordBaru === $passwordKonfirm;             // true
+        $berbedaLama  = !password_verify($passwordBaru, $hashedLama);   // true
+
+        $this->assertTrue($lamaBenar,    "Password lama harus benar.");
+        $this->assertTrue($cukupPanjang, "Password baru harus minimal 6 karakter.");
+        $this->assertTrue($cocok,        "Konfirmasi password harus cocok.");
+        $this->assertTrue($berbedaLama,  "Password baru harus berbeda dari yang lama.");
     }
 }

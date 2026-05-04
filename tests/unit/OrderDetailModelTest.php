@@ -5,20 +5,23 @@ namespace Tests\Unit\Models;
 use CodeIgniter\Test\CIUnitTestCase;
 
 /**
- * Unit test untuk OrderDetailModel - hanya menguji logika validasi dan perhitungan subtotal.
+ * Unit test untuk OrderDetailModel — menguji logika validasi dan perhitungan subtotal.
+ * Catatan: harga_satuan dan subtotal ada di allowedFields model namun tidak punya
+ * validation rule — keduanya dihitung dan diisi oleh TransaksiController saat checkout,
+ * sehingga validasinya berada di level controller, bukan model.
  */
+
 final class OrderDetailModelTest extends CIUnitTestCase
 {
     private function validate(array $data): bool
     {
         $validation = service('validation');
         $validation->reset();
+        // Rule sesuai OrderDetailModel::$validationRules
         $validation->setRules([
-            'id_order'     => 'required|integer',
-            'id_menu'      => 'required|integer',
-            'qty'          => 'required|integer|greater_than[0]',
-            'harga_satuan' => 'required|numeric|greater_than[0]',
-            'subtotal'     => 'required|numeric|greater_than_equal_to[0]',
+            'id_order' => 'required|integer',
+            'id_menu'  => 'required|integer',
+            'qty'      => 'required|integer|greater_than[0]',
         ]);
         return $validation->run($data);
     }
@@ -27,49 +30,66 @@ final class OrderDetailModelTest extends CIUnitTestCase
     public function testQtyNolGagal(): void
     {
         $result = $this->validate([
-            'id_order'     => 1,
-            'id_menu'      => 1,
-            'qty'          => 0,
-            'harga_satuan' => 25000,
-            'subtotal'     => 0,
+            'id_order' => 1,
+            'id_menu'  => 1,
+            'qty'      => 0,
         ]);
-        $this->assertFalse($result, "qty = 0 harus gagal validasi.");
+        $this->assertFalse($result, 'qty = 0 harus gagal validasi.');
     }
 
     // qty negatif → harus gagal
     public function testQtyNegatifGagal(): void
     {
         $result = $this->validate([
-            'id_order'     => 1,
-            'id_menu'      => 1,
-            'qty'          => -3,
-            'harga_satuan' => 25000,
-            'subtotal'     => 0,
+            'id_order' => 1,
+            'id_menu'  => 1,
+            'qty'      => -3,
         ]);
-        $this->assertFalse($result, "qty negatif harus gagal validasi.");
+        $this->assertFalse($result, 'qty negatif harus gagal validasi.');
+    }
+
+    // id_order bukan integer → harus gagal
+    public function testIdOrderBukanIntegerGagal(): void
+    {
+        $result = $this->validate([
+            'id_order' => 'abc',
+            'id_menu'  => 1,
+            'qty'      => 2,
+        ]);
+        $this->assertFalse($result, 'id_order bukan integer harus gagal validasi.');
+    }
+
+    // id_menu bukan integer → harus gagal
+    public function testIdMenuBukanIntegerGagal(): void
+    {
+        $result = $this->validate([
+            'id_order' => 1,
+            'id_menu'  => 'nasi-goreng',
+            'qty'      => 2,
+        ]);
+        $this->assertFalse($result, 'id_menu bukan integer harus gagal validasi.');
     }
 
     // Data valid → harus lolos
     public function testDataValidLulus(): void
     {
         $result = $this->validate([
-            'id_order'     => 1,
-            'id_menu'      => 1,
-            'qty'          => 2,
-            'harga_satuan' => 25000,
-            'subtotal'     => 50000,
+            'id_order' => 1,
+            'id_menu'  => 1,
+            'qty'      => 2,
         ]);
-        $this->assertTrue($result, "Data order detail valid harus lulus validasi.");
+        $this->assertTrue($result, 'Data order detail valid harus lulus validasi.');
     }
 
     // Perhitungan subtotal harus konsisten: subtotal = qty × harga_satuan
+    // (logika ini dilakukan di TransaksiController::checkout sebelum insert)
     public function testSubtotalSesuaiPerhitungan(): void
     {
         $qty          = 2;
         $harga_satuan = 25000;
         $subtotal     = $qty * $harga_satuan;
 
-        $this->assertEquals(50000, $subtotal, "Subtotal harus qty × harga_satuan.");
+        $this->assertEquals(50000, $subtotal, 'Subtotal harus qty * harga_satuan.');
     }
 
     // Deteksi manipulasi subtotal yang tidak sesuai
@@ -82,7 +102,7 @@ final class OrderDetailModelTest extends CIUnitTestCase
         $this->assertNotEquals(
             $qty * $harga_satuan,
             $subtotal_input,
-            "Sistem harus mendeteksi manipulasi subtotal."
+            'Sistem harus mendeteksi manipulasi subtotal.'
         );
     }
 
@@ -93,6 +113,6 @@ final class OrderDetailModelTest extends CIUnitTestCase
         $harga_satuan = 15000;
         $subtotal     = $qty * $harga_satuan;
 
-        $this->assertGreaterThanOrEqual(0, $subtotal, "Subtotal tidak boleh negatif.");
+        $this->assertTrue($subtotal >= 0, 'Subtotal tidak boleh negatif.');
     }
 }

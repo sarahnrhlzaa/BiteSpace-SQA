@@ -5,6 +5,11 @@ use CodeIgniter\Test\CIUnitTestCase;
 /**
  * Unit test untuk logika validasi form dan logika sesi/role.
  * Tidak menggunakan database — murni menguji rule validasi CodeIgniter dan logika PHP.
+ *
+ * Rule menu di file ini mengacu pada MenuController (store/update), bukan MenuModel,
+ * karena controller menerapkan rule yang lebih longgar untuk kebutuhan form input:
+ *   nama_menu : required|max_length[150]
+ *   harga     : required|numeric|greater_than_equal_to[0]
  */
 final class ValidationLogicTest extends CIUnitTestCase
 {
@@ -16,7 +21,8 @@ final class ValidationLogicTest extends CIUnitTestCase
         return $validation->run($data);
     }
 
-    // LOGIN VALIDATION
+    // ── LOGIN VALIDATION 
+    // Sesuai LoginController::login
 
     private function loginRules(): array
     {
@@ -32,7 +38,7 @@ final class ValidationLogicTest extends CIUnitTestCase
             'username' => 'sarah',
             'password' => 'sarah123',
         ]);
-        $this->assertTrue($result, "Data login valid harus lulus validasi.");
+        $this->assertTrue($result, 'Data login valid harus lulus validasi.');
     }
 
     public function testLoginUsernameKosong(): void
@@ -41,7 +47,7 @@ final class ValidationLogicTest extends CIUnitTestCase
             'username' => '',
             'password' => 'sarah123',
         ]);
-        $this->assertFalse($result, "Username kosong harus gagal validasi.");
+        $this->assertFalse($result, 'Username kosong harus gagal validasi.');
     }
 
     public function testLoginPasswordKosong(): void
@@ -50,7 +56,7 @@ final class ValidationLogicTest extends CIUnitTestCase
             'username' => 'sarah',
             'password' => '',
         ]);
-        $this->assertFalse($result, "Password kosong harus gagal validasi.");
+        $this->assertFalse($result, 'Password kosong harus gagal validasi.');
     }
 
     public function testLoginSemuaFieldKosong(): void
@@ -59,10 +65,11 @@ final class ValidationLogicTest extends CIUnitTestCase
             'username' => '',
             'password' => '',
         ]);
-        $this->assertFalse($result, "Semua field kosong harus gagal validasi.");
+        $this->assertFalse($result, 'Semua field kosong harus gagal validasi.');
     }
 
-    // MENU VALIDATION
+    // ── MENU VALIDATION
+    // Sesuai MenuController::store dan MenuController::update
 
     private function menuRules(): array
     {
@@ -80,7 +87,7 @@ final class ValidationLogicTest extends CIUnitTestCase
             'harga'       => 25000,
             'id_category' => 1,
         ]);
-        $this->assertTrue($result, "Data menu valid harus lulus validasi.");
+        $this->assertTrue($result, 'Data menu valid harus lulus validasi.');
     }
 
     public function testMenuNamaKosong(): void
@@ -90,7 +97,7 @@ final class ValidationLogicTest extends CIUnitTestCase
             'harga'       => 25000,
             'id_category' => 1,
         ]);
-        $this->assertFalse($result, "nama_menu kosong harus gagal validasi.");
+        $this->assertFalse($result, 'nama_menu kosong harus gagal validasi.');
     }
 
     public function testMenuHargaNegatif(): void
@@ -100,7 +107,18 @@ final class ValidationLogicTest extends CIUnitTestCase
             'harga'       => -5000,
             'id_category' => 1,
         ]);
-        $this->assertFalse($result, "Harga negatif harus gagal validasi.");
+        $this->assertFalse($result, 'Harga negatif harus gagal validasi.');
+    }
+
+    // Harga nol → harus lolos di level controller (greater_than_equal_to[0])
+    public function testMenuHargaNolLulusController(): void
+    {
+        $result = $this->validate($this->menuRules(), [
+            'nama_menu'   => 'Nasi Goreng',
+            'harga'       => 0,
+            'id_category' => 1,
+        ]);
+        $this->assertTrue($result, 'Harga = 0 lolos di rule controller (greater_than_equal_to[0]).');
     }
 
     public function testMenuHargaBukanAngka(): void
@@ -110,7 +128,7 @@ final class ValidationLogicTest extends CIUnitTestCase
             'harga'       => 'dua-puluh-ribu',
             'id_category' => 1,
         ]);
-        $this->assertFalse($result, "Harga berupa teks harus gagal validasi.");
+        $this->assertFalse($result, 'Harga berupa teks harus gagal validasi.');
     }
 
     public function testMenuIdCategoryBukanInteger(): void
@@ -120,9 +138,10 @@ final class ValidationLogicTest extends CIUnitTestCase
             'harga'       => 25000,
             'id_category' => 'abc',
         ]);
-        $this->assertFalse($result, "id_category bukan integer harus gagal validasi.");
+        $this->assertFalse($result, 'id_category bukan integer harus gagal validasi.');
     }
 
+    // nama_menu melebihi 150 karakter → gagal (batas controller)
     public function testMenuNamaMelebihi150Karakter(): void
     {
         $result = $this->validate($this->menuRules(), [
@@ -130,10 +149,11 @@ final class ValidationLogicTest extends CIUnitTestCase
             'harga'       => 25000,
             'id_category' => 1,
         ]);
-        $this->assertFalse($result, "nama_menu > 150 karakter harus gagal validasi.");
+        $this->assertFalse($result, 'nama_menu > 150 karakter harus gagal validasi.');
     }
 
-    // ROLE / SESSION LOGIC
+    // ── ROLE / SESSION LOGIC
+    // Sesuai logika isAdmin() di MenuController dan PromoController
 
     public function testIsAdminReturnTrueForAdmin(): void
     {
@@ -156,10 +176,11 @@ final class ValidationLogicTest extends CIUnitTestCase
         $role    = '';
         $isAdmin = strtolower((string) $role) === 'admin';
 
-        $this->assertFalse($isAdmin, "Role kosong tidak boleh dianggap admin.");
+        $this->assertFalse($isAdmin, 'Role kosong tidak boleh dianggap admin.');
     }
 
-    // PROMO VALIDATION
+    // ── PROMO VALIDATION
+    // Sesuai PromoController::store dan PromoController::update
 
     private function promoRules(): array
     {
@@ -167,10 +188,10 @@ final class ValidationLogicTest extends CIUnitTestCase
             'kode_promo'      => 'required|max_length[20]',
             'nama_promo'      => 'required|max_length[100]',
             'tipe_diskon'     => 'required|in_list[percent,nominal]',
-            'nilai_diskon'    => 'required|decimal|greater_than[0]',
-            'min_transaksi'   => 'required|decimal',
-            'tanggal_mulai'   => 'required|valid_date',
-            'tanggal_selesai' => 'required|valid_date',
+            'nilai_diskon'    => 'required|numeric|greater_than[0]',
+            'min_transaksi'   => 'required|numeric|greater_than_equal_to[0]',
+            'tanggal_mulai'   => 'required|valid_date[Y-m-d]',
+            'tanggal_selesai' => 'required|valid_date[Y-m-d]',
         ];
     }
 
@@ -185,7 +206,7 @@ final class ValidationLogicTest extends CIUnitTestCase
             'tanggal_mulai'   => '2025-01-01',
             'tanggal_selesai' => '2025-01-31',
         ]);
-        $this->assertTrue($result, "Data promo valid harus lulus validasi.");
+        $this->assertTrue($result, 'Data promo valid harus lulus validasi.');
     }
 
     public function testPromoTipeDiskonTidakValid(): void
@@ -213,6 +234,21 @@ final class ValidationLogicTest extends CIUnitTestCase
             'tanggal_mulai'   => '2025-01-01',
             'tanggal_selesai' => '2025-01-31',
         ]);
-        $this->assertFalse($result, "kode_promo > 20 karakter harus gagal validasi.");
+        $this->assertFalse($result, 'kode_promo > 20 karakter harus gagal validasi.');
+    }
+
+    // min_transaksi nol → harus lolos (controller pakai greater_than_equal_to[0])
+    public function testPromoMinTransaksiNolLulus(): void
+    {
+        $result = $this->validate($this->promoRules(), [
+            'kode_promo'      => 'GRATIS',
+            'nama_promo'      => 'Promo Tanpa Minimum',
+            'tipe_diskon'     => 'nominal',
+            'nilai_diskon'    => '5000',
+            'min_transaksi'   => '0',
+            'tanggal_mulai'   => '2025-01-01',
+            'tanggal_selesai' => '2025-01-31',
+        ]);
+        $this->assertTrue($result, 'min_transaksi = 0 harus lulus validasi.');
     }
 }
