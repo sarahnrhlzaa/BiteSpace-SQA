@@ -1,7 +1,8 @@
-C:\xampp8.2\htdocs\BiteSpace_Testing\automation-java\src\test\java\TestDashboard.java
-C:\xampp8.2\htdocs\BiteSpace_Testing\automation-java\src\test\java\TestEmployee.java
-C:\xampp8.2\htdocs\BiteSpace_Testing\automation-java\src\test\java\TestLogin.java
-C:\xampp8.2\htdocs\BiteSpace_Testing\automation-java\src\test\java\TestMenu.java
-C:\xampp8.2\htdocs\BiteSpace_Testing\automation-java\src\test\java\TestPromo.java
-C:\xampp8.2\htdocs\BiteSpace_Testing\automation-java\src\test\java\TestTable.java
-C:\xampp8.2\htdocs\BiteSpace_Testing\automation-java\src\test\java\TestTransaksi.java
+C:\xampp8.2\htdocs\BiteSpace_Testing\automation-java\src\test\java\com\bitespace\uitest\BaseTest.java
+C:\xampp8.2\htdocs\BiteSpace_Testing\automation-java\src\test\java\com\bitespace\uitest\TestDashboard.java
+C:\xampp8.2\htdocs\BiteSpace_Testing\automation-java\src\test\java\com\bitespace\uitest\TestEmployee.java
+C:\xampp8.2\htdocs\BiteSpace_Testing\automation-java\src\test\java\com\bitespace\uitest\TestLogin.java
+C:\xampp8.2\htdocs\BiteSpace_Testing\automation-java\src\test\java\com\bitespace\uitest\TestMenu.java
+C:\xampp8.2\htdocs\BiteSpace_Testing\automation-java\src\test\java\com\bitespace\uitest\TestPromo.java
+C:\xampp8.2\htdocs\BiteSpace_Testing\automation-java\src\test\java\com\bitespace\uitest\TestTable.java
+C:\xampp8.2\htdocs\BiteSpace_Testing\automation-java\src\test\java\com\bitespace\uitest\TestTransaksi.java

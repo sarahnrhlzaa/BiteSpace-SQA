@@ -1,6 +1,8 @@
-TestMenu.class
-TestEmployee.class
-TestTable.class
-TestLogin.class
-TestPromo.class
-TestTransaksi.class
+com\bitespace\uitest\TestDashboard.class
+com\bitespace\uitest\BaseTest.class
+com\bitespace\uitest\TestTable.class
+com\bitespace\uitest\TestEmployee.class
+com\bitespace\uitest\TestLogin.class
+com\bitespace\uitest\TestMenu.class
+com\bitespace\uitest\TestPromo.class
+com\bitespace\uitest\TestTransaksi.class
