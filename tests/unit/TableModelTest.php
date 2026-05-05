@@ -15,7 +15,7 @@ final class TableModelTest extends CIUnitTestCase
         $validation = service('validation');
         $validation->reset();
         $validation->setRules([
-            'nomor_meja' => 'required|max_length[20]',
+            'nomor_meja' => 'required|max_length[10]',
             'kapasitas'  => 'required|integer|greater_than[0]',
             'status'     => 'required|in_list[available,occupied,reserved]',
         ]);
@@ -27,7 +27,7 @@ final class TableModelTest extends CIUnitTestCase
     {
         $result = $this->validate([
             'nomor_meja' => 'T-99',
-            'kapasitas'  => 'Empat', // salah input
+            'kapasitas'  => 'Empat',
             'status'     => 'available',
         ]);
         $this->assertFalse($result, "Kapasitas berupa teks harus gagal validasi.");
@@ -61,23 +61,43 @@ final class TableModelTest extends CIUnitTestCase
         $result = $this->validate([
             'nomor_meja' => 'T-01',
             'kapasitas'  => 4,
-            'status'     => 'rusak', // bukan dari enum
+            'status'     => 'rusak',
         ]);
         $this->assertFalse($result, "Status tidak valid harus gagal validasi.");
+    }
+
+    public function testNomorMejaTepat10KarakterLulus(): void
+    {
+        $result = $this->validate([
+            'nomor_meja' => 'MEJA-99999', // 10 karakter
+            'kapasitas'  => 4,
+            'status'     => 'available',
+        ]);
+        $this->assertTrue($result, 'nomor_meja tepat 10 karakter harus lulus validasi.');
+    }
+
+public function testNomorMejaMelebihi10KarakterGagal(): void
+    {
+        $result = $this->validate([
+            'nomor_meja' => 'MEJA-999999', // 11 karakter
+            'kapasitas'  => 4,
+            'status'     => 'available',
+        ]);
+        $this->assertFalse($result, 'nomor_meja > 10 karakter harus gagal validasi.');
     }
 
     // Data meja valid → harus lolos
     public function testInsertMejaBerhasil(): void
     {
         $result = $this->validate([
-            'nomor_meja' => 'T-100',
+            'nomor_meja' => 'T-05',
             'kapasitas'  => 4,
             'status'     => 'available',
         ]);
         $this->assertTrue($result, "Data meja valid harus lulus validasi.");
     }
 
-    // Logika cek ketersediaan meja (simulasi, tanpa DB)
+    // Logika cek ketersediaan meja
     public function testMejaAvailableLogika(): void
     {
         $meja = ['nomor_meja' => 'T-05', 'kapasitas' => 4, 'status' => 'available'];

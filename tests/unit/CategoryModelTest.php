@@ -14,7 +14,7 @@ final class CategoryModelTest extends CIUnitTestCase
         $validation = service('validation');
         $validation->reset();
         $validation->setRules([
-            'nama_category' => 'required|max_length[100]',
+            'nama_category' => 'required|max_length[50]',
         ]);
         return $validation->run($data);
     }
@@ -26,11 +26,11 @@ final class CategoryModelTest extends CIUnitTestCase
         $this->assertFalse($result, "nama_category kosong harus gagal validasi.");
     }
 
-    // Nama kategori terlalu panjang (>100 karakter) → harus gagal
+    // Nama kategori terlalu panjang (>50 karakter) → harus gagal
     public function testNamaKategoriTerlaluPanjangGagal(): void
     {
-        $result = $this->validate(['nama_category' => str_repeat('A', 101)]);
-        $this->assertFalse($result, "nama_category > 100 karakter harus gagal validasi.");
+        $result = $this->validate(['nama_category' => str_repeat('A', 51)]);
+        $this->assertFalse($result, "nama_category > 50 karakter harus gagal validasi.");
     }
 
     // Nama kategori valid → harus lolos
@@ -40,10 +40,10 @@ final class CategoryModelTest extends CIUnitTestCase
         $this->assertTrue($result, "nama_category valid harus lulus validasi.");
     }
 
-    // Tepat 100 karakter → harus lolos (edge case)
-    public function testNamaKategoriTepat100KarakterLulus(): void
+    // Tepat 50 karakter → harus lolos 
+    public function testNamaKategoriTepat50KarakterLulus(): void
     {
-        $result = $this->validate(['nama_category' => str_repeat('A', 100)]);
-        $this->assertTrue($result, "nama_category tepat 100 karakter harus lulus validasi.");
+        $result = $this->validate(['nama_category' => str_repeat('A', 50)]);
+        $this->assertTrue($result, "nama_category tepat 50 karakter harus lulus validasi.");
     }
 }
