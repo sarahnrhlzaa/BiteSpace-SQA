@@ -36,12 +36,12 @@ class TransaksiTest extends TestCase
         curl_close($ch);
     }
 
-    private function get(string $path): array
+    private function get(string $path, bool $followRedirect = true): array
     {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL,            $this->baseUrl . $path);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, $followRedirect);
         curl_setopt($ch, CURLOPT_HEADER,         true);
         curl_setopt($ch, CURLOPT_COOKIEJAR,      $this->cookieJar);
         curl_setopt($ch, CURLOPT_COOKIEFILE,     $this->cookieJar);
@@ -73,21 +73,21 @@ class TransaksiTest extends TestCase
             "Halaman transaksi harus memiliki konten daftar menu.");
     }
 
-    // TC-29: Akses transaksi tanpa login → redirect ke login
+    // TC-29: Tanpa login → redirect 302 (tanpa cookie, tanpa follow redirect)
     public function testAksesTransaksiTanpaLogin(): void
     {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL,            $this->baseUrl . '/transaksi');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
         curl_setopt($ch, CURLOPT_HEADER,         true);
+        // Sengaja tanpa cookie jar
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
         echo "\n[TC-29] GET /transaksi tanpa login → HTTP $httpCode\n";
-        $this->assertEquals(200, $httpCode);
-        $this->assertStringContainsString('Login', $response,
-            "Harus diarahkan ke Login jika belum login.");
+        $this->assertEquals(302, $httpCode,
+            "Harus redirect 302 ke Login jika belum login.");
     }
 }

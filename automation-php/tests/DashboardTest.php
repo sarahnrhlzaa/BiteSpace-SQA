@@ -22,6 +22,7 @@ class DashboardTest extends TestCase
         @unlink($this->cookieJar);
     }
 
+    // Login dan follow redirect supaya session cookie tersimpan dengan benar
     private function loginAsAdmin(): void
     {
         $ch = curl_init();
@@ -29,19 +30,19 @@ class DashboardTest extends TestCase
         curl_setopt($ch, CURLOPT_POST,           true);
         curl_setopt($ch, CURLOPT_POSTFIELDS,     http_build_query(['username' => 'sarah', 'password' => 'sarah123']));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);   // ← follow 303 ke dashboard
         curl_setopt($ch, CURLOPT_COOKIEJAR,      $this->cookieJar);
         curl_setopt($ch, CURLOPT_COOKIEFILE,     $this->cookieJar);
         curl_exec($ch);
         curl_close($ch);
     }
 
-    private function get(string $path): array
+    private function get(string $path, bool $followRedirect = true): array
     {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL,            $this->baseUrl . $path);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, $followRedirect);
         curl_setopt($ch, CURLOPT_HEADER,         true);
         curl_setopt($ch, CURLOPT_COOKIEJAR,      $this->cookieJar);
         curl_setopt($ch, CURLOPT_COOKIEFILE,     $this->cookieJar);
@@ -61,22 +62,22 @@ class DashboardTest extends TestCase
             "Halaman dashboard harus tampil setelah login.");
     }
 
-    // TC-31: Dashboard tanpa login → redirect ke login
+    // TC-31: Dashboard tanpa login → redirect 302 (tidak follow redirect)
     public function testDashboardTanpaLogin(): void
     {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL,            $this->baseUrl . '/dashboard');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);  // ← tangkap 302 aslinya
         curl_setopt($ch, CURLOPT_HEADER,         true);
+        // Sengaja TANPA cookie jar supaya simulasi belum login
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
         echo "\n[TC-31] GET /dashboard tanpa login → HTTP $httpCode\n";
-        $this->assertEquals(200, $httpCode);
-        $this->assertStringContainsString('Login', $response,
-            "Harus diarahkan ke Login jika belum login.");
+        $this->assertEquals(302, $httpCode,
+            "Harus redirect 302 jika belum login.");
     }
 
     // TC-32: Dashboard punya konten statistik

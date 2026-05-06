@@ -5,32 +5,20 @@ use PHPUnit\Framework\TestCase;
 /**
  * LoginTest.php
  * PHPUnit automation test untuk fitur Login BiteSpace (CodeIgniter 4)
- *
- * Cara menjalankan:
- *   1. php spark serve --port=8081  (di folder BiteSpace)
- *   2. cd automation-php
- *   3. composer install
- *   4. composer test
- *
- * Kredensial default (UserSeeder.php):
- *   username: sarah  | password: sarah123
- *   username: neyza  | password: neyza123
  */
 class LoginTest extends TestCase
 {
     private string $baseUrl = 'http://localhost:8081';
 
-    // ─────────────────────────────────────────────────────
-    // Helper: POST request dengan cookie jar
-    // ─────────────────────────────────────────────────────
-    private function post(string $path, array $data, string $cookieJar = ''): array
+    // Helper: POST — followRedirects=true supaya bisa cek konten halaman tujuan
+    private function post(string $path, array $data, string $cookieJar = '', bool $followRedirect = true): array
     {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL,            $this->baseUrl . $path);
         curl_setopt($ch, CURLOPT_POST,           true);
         curl_setopt($ch, CURLOPT_POSTFIELDS,     http_build_query($data));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, $followRedirect);
         curl_setopt($ch, CURLOPT_HEADER,         true);
         if ($cookieJar) {
             curl_setopt($ch, CURLOPT_COOKIEJAR,  $cookieJar);
@@ -42,15 +30,13 @@ class LoginTest extends TestCase
         return [$httpCode, $response];
     }
 
-    // ─────────────────────────────────────────────────────
-    // Helper: GET request dengan cookie jar
-    // ─────────────────────────────────────────────────────
-    private function get(string $path, string $cookieJar = ''): array
+    // Helper: GET
+    private function get(string $path, string $cookieJar = '', bool $followRedirect = true): array
     {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL,            $this->baseUrl . $path);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, $followRedirect);
         curl_setopt($ch, CURLOPT_HEADER,         true);
         if ($cookieJar) {
             curl_setopt($ch, CURLOPT_COOKIEJAR,  $cookieJar);
@@ -62,9 +48,6 @@ class LoginTest extends TestCase
         return [$httpCode, $response];
     }
 
-    // ─────────────────────────────────────────────────────
-    // Sanity check
-    // ─────────────────────────────────────────────────────
     public function testTrue(): void
     {
         $this->assertTrue(true);
@@ -78,14 +61,15 @@ class LoginTest extends TestCase
         $this->assertEquals(200, $code, "Server harus berjalan di port 8081.");
     }
 
-    // TC-02: Login valid → masuk dashboard
+    // TC-02: Login valid → follow redirect → tampil Dashboard
     public function testLoginWithValidCredentials(): void
     {
         $cookieJar = tempnam(sys_get_temp_dir(), 'ci4_');
+        // followRedirect=true: POST login → 303 → GET /dashboard → 200
         [$code, $response] = $this->post('/login', [
             'username' => 'sarah',
             'password' => 'sarah123',
-        ], $cookieJar);
+        ], $cookieJar, true);
         @unlink($cookieJar);
 
         echo "\n[TC-02] Login sarah/sarah123 → HTTP $code\n";
@@ -96,13 +80,13 @@ class LoginTest extends TestCase
             "Setelah login harus tampil Dashboard.");
     }
 
-    // TC-03: Login password salah → ditolak
+    // TC-03: Login password salah → tetap di halaman login (tidak masuk Dashboard)
     public function testLoginWithInvalidPassword(): void
     {
         [$code, $response] = $this->post('/login', [
             'username' => 'sarah',
             'password' => 'passwordSalah',
-        ]);
+        ], '', true);
 
         echo "\n[TC-03] Login password salah → HTTP $code\n";
 
@@ -117,7 +101,7 @@ class LoginTest extends TestCase
         [$code, $response] = $this->post('/login', [
             'username' => 'userTidakAda999',
             'password' => 'apapun',
-        ]);
+        ], '', true);
 
         echo "\n[TC-04] Login username tidak ada → HTTP $code\n";
 
@@ -132,7 +116,7 @@ class LoginTest extends TestCase
         [$code, $response] = $this->post('/login', [
             'username' => '',
             'password' => '',
-        ]);
+        ], '', true);
 
         echo "\n[TC-05] Login field kosong → HTTP $code\n";
 
@@ -141,17 +125,17 @@ class LoginTest extends TestCase
             "Field kosong tidak boleh masuk Dashboard.");
     }
 
-    // TC-06: Akses dashboard tanpa login → redirect ke login
+    // TC-06: Akses /dashboard tanpa login → CI4 redirect 302 ke login
     public function testAccessDashboardWithoutLogin(): void
     {
-        [$code, $response] = $this->get('/dashboard');
+        // followRedirect=false supaya kita tangkap 302
+        [$code, $response] = $this->get('/dashboard', '', false);
 
         echo "\n[TC-06] Akses /dashboard tanpa login → HTTP $code\n";
         echo "Ada 'Login': " . (str_contains($response, 'Login') ? 'Ya' : 'Tidak') . "\n";
 
-        $this->assertEquals(200, $code);
-        $this->assertStringContainsString('Login', $response,
-            "Harus diarahkan ke halaman Login.");
+        $this->assertEquals(302, $code,
+            "Harus redirect 302 ke halaman Login jika belum login.");
     }
 
     // TC-07: Logout → kembali ke login
@@ -159,16 +143,16 @@ class LoginTest extends TestCase
     {
         $cookieJar = tempnam(sys_get_temp_dir(), 'ci4_');
 
-        // Login dulu
+        // Login dulu (follow redirect agar session tersimpan + response dashboard terbaca)
         [$loginCode, $loginResponse] = $this->post('/login', [
             'username' => 'sarah',
             'password' => 'sarah123',
-        ], $cookieJar);
+        ], $cookieJar, true);
         $this->assertStringContainsString('Dashboard', $loginResponse,
             "Harus login dulu sebelum test logout.");
 
-        // Logout
-        [$code, $response] = $this->get('/logout', $cookieJar);
+        // Logout (follow redirect ke /login)
+        [$code, $response] = $this->get('/logout', $cookieJar, true);
         @unlink($cookieJar);
 
         echo "\n[TC-07] Logout → HTTP $code\n";
@@ -179,38 +163,36 @@ class LoginTest extends TestCase
             "Setelah logout harus kembali ke halaman Login.");
     }
 
-    // TC-08: Akses menu tanpa login → redirect ke login
+    // TC-08: Akses /menu tanpa login → redirect 302
     public function testAccessMenuWithoutLogin(): void
     {
-        [$code, $response] = $this->get('/menu');
+        [$code, $response] = $this->get('/menu', '', false);
 
         echo "\n[TC-08] Akses /menu tanpa login → HTTP $code\n";
 
-        $this->assertEquals(200, $code);
-        $this->assertStringContainsString('Login', $response,
-            "Harus diarahkan ke Login jika belum login.");
+        $this->assertEquals(302, $code,
+            "Harus redirect 302 ke Login jika belum login.");
     }
 
-    // TC-09: Akses transaksi tanpa login → redirect ke login
+    // TC-09: Akses /transaksi tanpa login → redirect 302
     public function testAccessTransaksiWithoutLogin(): void
     {
-        [$code, $response] = $this->get('/transaksi');
+        [$code, $response] = $this->get('/transaksi', '', false);
 
         echo "\n[TC-09] Akses /transaksi tanpa login → HTTP $code\n";
 
-        $this->assertEquals(200, $code);
-        $this->assertStringContainsString('Login', $response,
-            "Harus diarahkan ke Login jika belum login.");
+        $this->assertEquals(302, $code,
+            "Harus redirect 302 ke Login jika belum login.");
     }
 
-    // TC-10: Login neyza valid → masuk dashboard
+    // TC-10: Login neyza valid → tampil Dashboard
     public function testLoginNeyzaValid(): void
     {
         $cookieJar = tempnam(sys_get_temp_dir(), 'ci4_');
         [$code, $response] = $this->post('/login', [
             'username' => 'neyza',
             'password' => 'neyza123',
-        ], $cookieJar);
+        ], $cookieJar, true);
         @unlink($cookieJar);
 
         echo "\n[TC-10] Login neyza/neyza123 → HTTP $code\n";
